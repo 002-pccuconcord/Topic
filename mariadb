@@ -1,0 +1,14 @@
+#!/bin/bash
+yum update -y
+systemctl stop firewalld
+systemctl disable firewalld
+yum install mariadb-server-galera -y
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+echo [mysqld] >> /etc/my.cnf.d/galera.cnf
+echo general-log=1 >> /etc/my.cnf.d/galera.cnf
+echo general-log-file=/tmp/mysqld-gen.log >> /etc/my.cnf.d/galera.cnf
+echo log-output=FILE >> /etc/my.cnf.d/galera.cnf
+sed -i 's/wsrep_cluster_name="my_wsrep_cluster"/wsrep_cluster_name="galera_cluster"/' /etc/my.cnf.d/galera.cnf
+sed -i 's/#wsrep_cluster_address="dummy://"/wsrep_cluster_address="gcomm://192.168.64.40,192.168.64.41,192.168.64.42,192.168.64.43,192.168.64.44"/' /etc/my.cnf.d/galera.cnf
+sed -i 's/#wsrep_node_name=/wsrep_node_name="srv0"/' /etc/my.cnf.d/galera.cnf
+sed -i 's/#wsrep_node_address=/wsrep_node_address="192.168.64.40"/' /etc/my.cnf.d/galera.cnf
