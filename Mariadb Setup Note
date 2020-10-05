@@ -1,0 +1,96 @@
+1. CPU 2 core, Ram 3GB, HD 100GB, Network 2 NAT, IDE CD, Auto Detect Display
+
+2. CentOS 8 8.1.1911
+	中文、英文
+	mini install
+	Hostname srv0
+	root/Aa1234, user/Aa1234
+
+3. 系統更新
+	yum update -y
+	reboot now
+
+4. 設定系統IP
+	nmtui
+		ens32
+			IP指定為  192.168.32.40/24
+			Gateway   192.168.32.2
+			DNS       8.8.8.8
+			Disable IPv6
+		ens33
+			IP指定為  192.168.64.40/24
+			Gateway   192.168.64.20
+			Disable IPv6
+	reboot now
+
+5. 關閉防火牆(參考 https://www.liquidweb.com/kb/how-to-stop-and-disable-firewalld-on-centos-7/ , https://www.opencli.com/linux/centos-7-disable-firewalld-selinux)
+	systemctl stop firewalld
+	systemctl disable firewalld
+
+6. 關閉SELINUX(參考 https://www.opencli.com/linux/centos-7-disable-firewalld-selinux)
+	vi /etc/selinux/config
+		replace "SELINUX=enforcing" as "SELINUXTYPE=disabled"
+		save & exit
+	reboot now
+
+7.  架設Mariadb-galera-cluster(https://www.server-world.info/en/note?os=CentOS_8&p=mariadb&f=5)
+        1.mariadb
+		yum install mariadb-server-galera -y
+        
+	2.更改galera.cnf設定檔內容
+		vi /etc/my.cnf.d/galera.cnf
+			日誌檔案設定
+			general-log=1
+			general-log-file=/tmp/mysqld-gen.log
+			log-output=FILE
+			更改設定跟增加節點
+			wsrep_cluster_name="galera_cluster"
+			wsrep_cluster_address="gcomm://192.168.32.40,192.168.32.41,192.168.32.42,192.168.32.43,192.168.32.44,192.168.32.45"
+			wsrep_node_name="srv0"
+			wsrep_node_address="192.168.32.40"
+                
+	3.開始連線	
+		galera_new_cluster
+
+	4.設定mysql密碼	
+		mysql_secure_installation
+
+			Enter current password for root (enter for none): 
+			OK, successfully used password, moving on...
+ 
+			Setting the root password ensures that nobody can log into the MariaDB
+			root user without the proper authorisation.
+ 
+			Set root password? [Y/n] Y
+			New password: Aa1234
+			Re-enter new password: Aa2134
+
+			Remove anonymous users? [Y/n] Y
+	
+			Disallow root login remotely? [Y/n] n
+
+			Remove test database and access to it? [Y/n] Y
+	
+			Reload privilege tables now? [Y/n] Y
+			... Success!
+	5.權限設定能從遠端登入
+			進入mariadb裡面
+			mysql -u root -p
+
+			輸入授權權限
+			grant all privileges on *.* to root@'%' identified by 'Aa1234' with grant option;
+
+			刷新系統權限
+			flush privileges;
+
+	5.測試連線
+			mysql -u root -p -e "show status like 'wsrep_cluster_size';"
+
+
+	6.如果mariadb無法開啟顯示(systemctl start mariadb.service
+	Job for mariadb.service failed because the control process exited with error code. 
+	See“systemctl status mariadb.service” and “journalctl -xe” for details.)
+		
+			解決方案 cp /usr/share/mariadb/wsrep.cnf /etc/my.cnf
+				 cp: overwrite ‘/etc/my.cnf’? y			
+				 systemctl restart mariadb.service
