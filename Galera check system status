@@ -1,0 +1,25 @@
+檔案名稱:	test.sh
+
+檔案權限:	-rwxr-xr-x. 1 root root   374 Sep  4 12:31 test.sh
+
+檔案位置:	/usr/local/bin
+
+檔案內容:
+
+=================================
+#!/bin/bash
+while :
+do
+        s="1"
+        t=`mysql -uroot -pAa1234 -e"use aa;select * from test;" | awk '{print $1}' | sed '1d'`
+        date +"%Y-%m-%d %H:%M:%S.%9N"
+        if [ $(systemctl is-active mariadb.service) == "inactive" ]; then
+                /usr/local/bin/test
+                systemctl stop socket.service
+        fi
+        if [ "$t" != "$s" ];then
+        echo "error"
+        fi
+        sleep 1
+done
+=================================
