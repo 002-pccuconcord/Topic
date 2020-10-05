@@ -1,0 +1,98 @@
+檔案名稱:	test.c
+
+檔案權限:	-rw-r--r--. 1 root root  2844 Sep 12 09:46 test.c
+
+檔案位置:	/usr/local/bin
+
+檔案內容:
+複製完要執行	gcc -o test test.c
+
+=================================
+//                    1            2          3
+//sockfd = socket(AF_INET , SOCK_STREAM , 0);
+//1定義了socket要在哪個領域溝通
+// AF_INET – ipv4, AF_INET6 -ipv6：讓兩台主機透過網路進行資料傳輸
+//2 socket是傳輸的手段
+// SOCK_STREAM – tcp, SOCK_DGRAM - udp
+//3 socket的協定標準，一般來說都會設為0
+// AF = Address Family
+//PF = Protocol Family
+//AF_INET = PF_INET
+//建立socket時是指定協議，應該用PF_ INET，設置地址時應該用AF_ INET
+
+//server
+#include <stdio.h>
+#include <stdlib.h>//數值與字符串轉換函數
+#include <string.h>
+#include <unistd.h>//對 POSIX 作業系統 API 的訪問功能
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>//標題定義了 一個in_addr 結構
+int main(int argc , char *argv[])
+
+{
+    //socket的建立
+    char message[] = {"Hi,this is server.\n"};
+    int sockfd = 0,forClientSockfd = 0;//初始化
+    sockfd = socket(AF_INET , SOCK_STREAM , 0);//初始化(用ipv4領域溝通，使用tcp傳輸,0)
+    char inputBuffer[256] = {};
+    char Srv1[256]={"Srv1"};
+    char Srv2[256]={"Srv2"};
+    char Master[256]={"Master"};
+    char Slave[256]={"Slave"};
+    char Srv5[256]={"Srv5"};
+    if (sockfd == -1){
+        printf("Fail to create a socket.");//回傳-1代表建立失敗
+    }
+
+    //socket的連線
+    struct sockaddr_in serverInfo,clientInfo;//初始化
+    int addrlen = sizeof(clientInfo);//client的大小
+    bzero(&serverInfo,sizeof(serverInfo)); //初始化，將struct涵蓋的bits設為0
+
+    serverInfo.sin_family = PF_INET;
+    serverInfo.sin_addr.s_addr = INADDR_ANY;//指任何人都可以進入
+    serverInfo.sin_port = htons(8700);
+    bind(sockfd,(struct sockaddr *)&serverInfo,sizeof(serverInfo));
+    listen(sockfd,5);//監聽，5是最多能幾個人進入server
+
+    while(1){
+        forClientSockfd = accept(sockfd,(struct sockaddr*) &clientInfo, &addrlen);
+        if(forClientSockfd>0)  //no error occured
+        {
+                perror("Accept"); //accept error
+                send(forClientSockfd,message,sizeof(message),0);//傳送再message裡面的訊息給client
+                recv(forClientSockfd,inputBuffer,sizeof(inputBuffer),0);//接收client的訊息放入inputBuffer裡面
+                char * a  = inputBuffer;
+                char * b  = Srv1;
+                char * c  = Srv2;
+                char * d  = Master;
+                char * e  = Slave;
+                char * f  = Srv5;
+                printf("Get:%s\n",inputBuffer);
+                if( strcmp(a,b) == 0 )
+                {
+                        system("/usr/local/bin/Srv1.sh");
+                }
+                if( strcmp(a,c) == 0 )
+                {
+                        system("/usr/local/bin/Srv2.sh");
+                }
+                if( strcmp(a,f) == 0 )
+                {
+                        system("/usr/local/bin/Srv5.sh");
+                }
+                if( strcmp(a,d) == 0 )
+                {
+                        system("/usr/local/bin/master.sh");
+                }
+                if( strcmp(a,e) == 0 )
+                {
+                        system("/usr/local/bin/slave.sh");
+                }
+        }
+    }
+    printf("close Socket\n");
+    return 0;
+}
+=================================
