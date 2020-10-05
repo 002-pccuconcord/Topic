@@ -1,0 +1,347 @@
+1. CPU 2 core, Ram 3GB, HD 100GB, Network 2 NAT, IDE CD, Auto Detect Display
+
+2. CentOS 8 1911 
+	中文、英文
+	mini install
+	Hostname ha1.test.com
+	root/Aa1234, user/Aa1234
+
+3. 系統更新
+	yum update -y
+	reboot now
+
+4. 設定系統IP
+	nmtui
+		ens32
+			IP指定為  192.168.32.21/24
+			Gateway   192.168.32.2
+			DNS 	  8.8.8.8
+			Disable IPv6
+		ens33
+			IP指定為  192.168.64.21/24
+			Gateway   192.168.64.20
+			Disable IPv6
+	reboot now
+
+5. 關閉防火牆(參考 https://www.liquidweb.com/kb/how-to-stop-and-disable-firewalld-on-centos-7/ , https://www.opencli.com/linux/centos-7-disable-firewalld-selinux)
+	systemctl stop firewalld
+	systemctl disable firewalld
+
+6. 關閉SELINUX(參考 https://www.opencli.com/linux/centos-7-disable-firewalld-selinux)
+	vi /etc/selinux/config
+		replace "SELINUX=enforcing" as "SELINUXTYPE=disabled"
+		save & exit
+	reboot now
+
+7. 安裝相關軟體
+	1. sshpass, wget, zip, unzip, make
+		yum install -y epel-release
+		yum repolist
+		yum install -y sshpass wget zip unzip make
+	2. dotnet core runtime (參考 https://dotnet.microsoft.com/download/linux-package-manager/centos/runtime-2.1.0 & https://dotnet.microsoft.com/download/linux-package-manager/centos/sdk-current)
+		rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
+		yum update
+		yum repolist
+		yum install -y aspnetcore-runtime-2.1
+		dotnet --info -> 
+			Host: 
+				Version: 2.1.10
+				Commit: 9013a2af4b
+			.NET Core runtimes installed:
+				Microsoft.AspNetCore.All 2.1.10
+				Microsoft.AspNetCore.App 2.1.10
+				Microsoft.NETCore.App 2.1.10
+	3. 依賴軟體套件
+		yum install -y pcre-devel zlib zlib-devel gcc gcc-c++ openssl openssl-devel libnl*
+		yum --enablerepo=PowerTools install libnfnetlink-devel pcre-static -y
+
+8. 設定 rsyslog
+	vi /etc/rsyslog.conf
+	1. 開啟UDP連入：
+		找到 # Provides UDP syslog reception
+		移除 # module(load="imudp") 及 # input(type="imudp" port="514") 前面的#
+	2. 增加 Keepalived 及 HAProxy 的記錄設定
+		找到 #### RULES ####
+		增加 
+			# Keepalived's Log to keepalived.log
+			local0.*				/var/log/keepalived.log
+			# HAProxy's Log to haproxy.log
+			local1.*				/var/log/haproxy.log
+	3. 重啟rsyslog
+		systemctl restart rsyslog
+		systemctl status rsyslog
+
+10. 設定IP Forward及NAT
+	1. IP Forward
+		vi /etc/sysctl.conf
+		add "net.ipv4.ip_forward = 1"
+		save and exit
+
+		vi /usr/lib/sysctl.d/50-default.conf
+		add "net.ipv4.ip_forward = 1"
+		save and exit
+	2. NAT by iptables
+		iptables --flush
+		iptables --table nat --flush
+		iptables --delete-chain
+		iptables --table nat --delete-chain
+		iptables --table nat --append POSTROUTING --out-interface ens33 -j MASQUERADE
+		iptables --append FORWARD --in-interface ens34 -j ACCEPT
+	3. reboot now
+
+11. 安裝&基本最簡單設定 HAProxy (參考 https://dotblogs.com.tw/ricochen/2018/04/14/155828 & https://upcloud.com/community/tutorials/haproxy-load-balancer-centos/)
+	1. 下載最新版本並安裝
+		mkdir /tmp/dl
+		cd /tmp/dl
+		wget http://www.haproxy.org/download/1.9/src/haproxy-1.9.7.tar.gz
+		tar zxvf haproxy-1.9.7.tar.gz
+		cd haproxy-1.9.7
+		make TARGET=linux2628 ARCH=x86_64 PREFIX=/usr/local/haproxy
+		make install PREFIX=/usr/local/haproxy
+		mkdir /etc/haproxy
+		ln -s /usr/local/haproxy/sbin/haproxy /usr/sbin/haproxy
+		cp -R /tmp/dl/haproxy-1.9.7/examples/errorfiles /usr/local/haproxy/
+		cp /tmp/dl/haproxy-1.9.7/examples/haproxy.init /etc/rc.d/init.d/haproxy
+		chmod +x /etc/rc.d/init.d/haproxy
+	2. 基本設定
+		mkdir /usr/local/haproxy/conf
+		(從之前2-HA1下載)
+		vi /usr/local/haproxy/conf/haproxy.cfg
+
+
+
+		global
+		    daemon
+		    user root
+		    group root
+		    nbproc 1
+		    maxconn 2000
+		    pidfile /var/run/haproxy.pid
+		    stats socket /usr/local/haproxy/stats
+		    chroot /usr/local/haproxy
+		    log 127.0.0.1 local1
+
+		defaults
+		    log global
+		    retries 3
+		    mode tcp
+		    option tcplog
+		    option dontlognull
+		    timeout check 10s
+  		    timeout http-request 20s
+		    timeout server 50000
+		    timeout client 50000
+
+		listen stats
+		    mode http
+		    bind 0.0.0.0:8000
+		    stats uri /stats
+		    stats hide-version
+		    stats refresh 10s
+		    stats auth admin:admin
+		    server vip 192.168.64.20:7000 check
+		    server srv0 192.168.64.40:3306 check
+		    server srv1 192.168.64.41:3306 check
+		    server srv2 192.168.64.42:3306 check
+		    server srv3 192.168.64.43:3306 check
+		    server srv4 192.168.64.44:3306 check
+   
+
+		frontend main
+ 		    mode tcp
+		    bind 0.0.0.0:7000 transparent
+		    option tcplog
+		    default_backend mariadb
+
+		backend mariadb
+ 	   	    mode tcp
+ 	   	    option tcpka
+  		    balance source
+ 		    server vip 192.168.64.20:7000 check
+		    server svr0 192.168.64.40:3306 check weight 1
+		    server svr1 192.168.64.41:3306 check weight 1
+		    server srv2 192.168.64.42:3306 check weight 1
+		    server svr3 192.168.64.43:3306 check weight 1
+		    server svr4 192.168.64.44:3306 check weight 1
+
+
+
+		改如初始的haproxy.cfg
+		ln -s /usr/local/haproxy/conf/haproxy.cfg /etc/haproxy/haproxy.cfg
+		chkconfig --add haproxy
+		chkconfig haproxy on	
+	3. 檢查是否安裝成功
+		systemctl start haproxy
+		systemctl status haproxy  -> 檢查執行狀態(Active)為 active (running)
+		haproxy -v -> HA-Proxy version 1.9.7 2019/04/25 - https://haproxy.org/
+	設定haproxy自動啟動
+		systemctl enable haproxy
+
+
+12. 安裝&設定 Keepalived (參考 https://www.cnblogs.com/zwcry/p/9542867.html & https://www.infvie.com/ops-notes/keepalived-install )
+	1. 下載解壓安裝 
+		cd /tmp/dl
+		wget https://www.keepalived.org/software/keepalived-2.0.16.tar.gz
+		tar -zxvf keepalived-2.0.16.tar.gz 
+		cd keepalived-2.0.16
+		./configure --prefix=/usr/local/keepalived
+		make && make install
+	2. 增加系統啟動檔 
+		mkdir /etc/keepalived
+		cp /tmp/dl/keepalived-2.0.16/keepalived/etc/init.d/keepalived /etc/init.d/
+		ln -s /usr/local/keepalived/etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf
+		ln -s /usr/local/keepalived/etc/sysconfig/keepalived /etc/sysconfig/keepalived
+		ln -s /usr/local/keepalived/sbin/keepalived /usr/sbin/keepalived
+		chmod 755 /etc/init.d/keepalived
+		chkconfig --add keepalived
+		chkconfig keepalived on
+	調整Log記錄方式為rsyslog
+		vi /etc/sysconfig/keepalived
+		找到 KEEPALIVED_OPTIONS="-D"
+		改為 
+			#KEEPALIVED_OPTIONS="-D"
+			KEEPALIVED_OPTIONS="-D -d -S 0" ﻿
+
+		vi /lib/systemd/system/keepalived.service
+		找到
+			EnvironmentFile=-/usr/local/keepalived/etc/sysconfig/keepalived
+		改為
+			EnvironmentFile=/etc/sysconfig/keepalived
+	調整設定文件
+		(從之前2-HA1下載)
+		vi /etc/keepalived/keepalived.conf
+
+
+
+		! Configuration File for keepalived
+
+		global_defs {
+		#   notification_email {
+		#   }
+		#   router_id CentOS
+		#   vrrp_skip_check_adv_addr
+		#   vrrp_strict
+		#   vrrp_garp_interval 0
+		#   vrrp_gna_interval 0
+		}
+
+		vrrp_script check_haproxy{
+		    script "/usr/local/keepalived/scripts/check_haproxy.sh"
+		    interval 2
+		    weight 2
+		}
+
+
+		vrrp_instance VI_1 {
+		    state MASTER
+		    interface ens33
+		    virtual_router_id 50
+		    nopreempt
+		    protocol TCP
+		    priority 100
+		    advert_int 1
+		    authentication {
+		        auth_type PASS
+		        auth_pass 1111
+		    }
+		    track_script {
+		        cheack_haproxy
+		    }
+
+		    virtual_ipaddress {
+		        192.168.32.20
+		    }
+		}
+
+		vrrp_instance VI_2 {
+		    state MASTER
+		    interface ens34
+		    virtual_router_id 49
+		    protocol TCP
+		    priority 90
+		    advert_int 1
+		    authentication {
+		        auth_type PASS
+		        auth_pass 1111
+		    }
+		    track_script {
+		        cheack_haproxy
+		    }
+		    virtual_ipaddress {
+		        192.168.64.20
+		    }
+		}
+		
+
+		virtual_server 192.168.64.20 5050 {
+		    delay_loop 1
+		    lb_algo sh
+		    lb_kind NAT
+		    persistence_timeout 50
+		    protocol TCP
+		    real_server 192.168.64.40 5050 {
+		        weight 1
+		        TCP_CHECK {
+		            connect_timeout 3
+		        }
+		    }
+		    real_server 192.168.64.41 5050 {
+		        weight 1
+		        TCP_CHECK {
+		            connect_timeout 3
+		        }
+		    }
+		    real_server 192.168.64.42 5050 {
+		        weight 1
+		        TCP_CHECK {
+		            connect_timeout 3
+		        }
+		    }
+		    real_server 192.168.64.43 5050 {
+		        weight 1
+		        TCP_CHECK {
+		            connect_timeout 3
+		        }
+		    }
+		    real_server 192.168.64.44 5050 {
+		        weight 1
+		        TCP_CHECK {
+		            connect_timeout 3
+		        }
+		    }
+		    real_server 192.168.64.45 5050 {
+		        weight 1
+		        TCP_CHECK {
+		            connect_timeout 3
+		        }
+		    }
+		}
+
+
+
+		改如初始的keepalived.conf
+		mkdir /usr/local/keepalived/scripts
+		cd  /usr/local/keepalived/scripts
+		(從之前2-HA1下載)
+		vi check_haproxy.sh
+
+		#!/bin/bash
+		if [ $(ps -C haproxy --no-header | wc -l) -eq 0 ]; then
+		  systemctl start haproxy
+		fi
+		sleep 2
+		if [ $(ps -C haproxy --no-header | wc -l) -eq 0 ]; then
+		  systemctl stop keepalived
+		fi
+
+
+
+
+		chmod +x check_haproxy.sh
+	檢查是否安裝成功
+		systemctl daemon-reload
+		systemctl start keepalived
+		systemctl status keepalived  -> 檢查執行狀態(Active)為 active (running)
+		ip add -> 檢查虛擬IP有正確binding在網卡上面(參考Keepalived安裝成功.png)
+	設定Keepalived自動啟動
+		systemctl enable keepalived
