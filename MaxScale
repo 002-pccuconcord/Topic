@@ -1,0 +1,114 @@
+安裝MariaDB和MaxScale yum存儲庫
+
+curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
+
+安裝maxscale
+
+yum install -y makecache
+yum install -y maxscale
+
+在mariadb裡，創建具有必要權限的MaxScale用戶
+
+mysql -u root -p
+
+create user 'user'@'%' identified by 'Aa1234';
+
+grant select on mysql.user to 'user'@'%';
+
+grant select on mysql.db to 'user'@'%';
+
+grant select on mysql.tables_priv to 'user'@'%';
+
+grant show databases on *.* to 'user'@'%';
+
+flush privileges;
+
+編輯MaxScale配置
+
+vi /etc/maxscale.cnf
+
+添加以下指令
+
+
+[maxscale]
+threads=auto
+
+[server1]
+type=server
+address=192.168.32.41
+port=3306
+protocol=MariaDBBackend
+
+[server2]
+type=server
+address=192.168.32.42
+port=3306
+protocol=MariaDBBackend
+
+[server3]
+type=server
+address=192.168.32.43
+port=3306
+protocol=MariaDBBackend
+
+[server4]
+type=server
+address=192.168.32.44
+port=3306
+protocol=MariaDBBackend
+
+[server5]
+type=server
+address=192.168.32.45
+port=3306
+protocol=MariaDBBackend
+
+[MariaDB-Monitor]
+type=monitor
+module=galeramon
+servers=server1,server2,server3,server4,server5
+user=user
+password=Aa1234
+monitor_interval=2000
+
+[Read-Only-Service]
+type=service
+router=readconnroute
+router_options=slave
+servers=server5
+user=user
+password=Aa1234
+
+[Read-Write-Service]
+type=service
+router=readwritesplit
+servers=server1,server2,server3,server4
+user=user
+password=Aa1234
+
+[Read-Only-Listener]
+type=listener
+service=Read-Only-Service
+protocol=MariaDBClient
+port=3307
+
+[Read-Write-Listener]
+type=listener
+service=Read-Write-Service
+protocol=MariaDBClient
+port=3308
+
+==========================================================
+啟動並啟用MaxScale服務
+
+systemctl start maxscale
+systemctl status maxscale
+systemctl enable maxscale
+
+用MaxCtrl查看 MaxScale狀態
+
+查看服務
+maxctrl list services
+
+查看server
+maxctrl list servers
