@@ -1,0 +1,22 @@
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/Questions/{print $2,$4}'`
+echo Questions $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/Threads_connected/{print $2,$4}'`
+echo Threads_connected $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/Threads_running/{print $2,$4}'`
+echo Threads_running $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/Connection_errors_internal/{print $2,$4}'`
+echo Connection_errors_internal $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/Aborted_connects/{print $2,$4}'`
+echo Aborted_connects $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/Connection_errors_max_connections/{print $2,$4}'`
+echo Connection_errors_max_connections $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/wsrep_cluster_status/{print $2,$4}'`
+echo wsrep_cluster_status $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/wsrep_cluster_size/{print $2,$4}'`
+echo wsrep_cluster_size $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/wsrep_ready/{print $2,$4}'`
+echo wsrep_ready $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/wsrep_connected/{print $2,$4}'`
+echo wsrep_connected $result
+result=`mysql -uroot -pAa1234 -e "show status;" |awk '/wsrep_incoming_addresses/{print $2,$4}'`
+echo wsrep_incoming_addresses $result
