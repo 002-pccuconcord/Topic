@@ -1,0 +1,267 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from tensorflow.keras import layers
+import tensorflow_datasets as tfds
+import math
+tf.compat.v1.enable_eager_execution()
+#將train Data 重新分成1:9等分，分給valid data , train data
+valid_split,train_split=tfds.Split.TRAIN.subsplit([10,90])
+#取得訓練資料，並讀取data資訊
+train_data,info=tfds.load("svhn_cropped",split=train_split,with_info=True)
+#取得測試資料
+test_data=tfds.load("svhn_cropped",split=tfds.Split.TEST)
+#取得驗證資料
+valid_data=tfds.load("svhn_cropped",split=valid_split)
+
+
+# In[2]:
+
+
+print(info)
+
+
+# In[3]:
+
+
+labels_dict=dict(enumerate(info.features['label'].names))
+labels_dict
+
+
+# In[4]:
+
+
+dataset,metadata = tfds.load('svhn_cropped',as_supervised=True,with_info=True)
+train_dataset,test_dataset = dataset['train'],dataset['test']
+
+
+# In[5]:
+
+
+num_train_examples = info.splits['train'].num_examples
+num_test_examples = info.splits['test'].num_examples
+print("训练样本个数: {}".format(num_train_examples))
+print("测试样本个数:{}".format(num_test_examples))
+
+
+# In[6]:
+
+
+def normalize(images,labels): #定义标准化函数
+    images = tf.cast(images,tf.float32)
+    images /= 255
+    return images,labels
+
+train_dataset = train_dataset.map(normalize)#标准化
+test_dataset = test_dataset.map(normalize) #标准化
+
+
+# In[7]:
+
+
+plt.figure(figsize=(10,10))
+i = 0
+for (image, label) in train_dataset.take(25):
+    image = image.numpy().reshape((32,32,3))
+    plt.subplot(5,5,i+1)
+    plt.xticks([])
+    plt.yticks([])
+    plt.grid(False)
+    plt.imshow(image, cmap=plt.cm.binary)
+#     plt.xlabel(class_names[label])
+    i += 1
+plt.show()
+
+
+# In[8]:
+
+
+def parse_fn(dataset):
+  #影像標準化
+  x=tf.cast(dataset['image'],tf.float32)/255.
+  #將輸出標籤轉乘one-hot Encoding
+  y=tf.one_hot(dataset['label'],10)
+  return x,y
+
+
+# In[9]:
+
+
+AUTOTUNE=tf.data.experimental.AUTOTUNE  #自動調整模式
+batch_size=200  #批次大小
+train_num=int(info.splits['train'].num_examples/10)*9   #訓練資料量
+
+
+# In[10]:
+
+
+#打散資料集
+train_data = train_data.shuffle(train_num)
+train_data = train_data.map(parse_fn)#标准化
+test_data = test_data.map(parse_fn) #标准化
+
+
+# In[11]:
+
+
+print(train_data)
+
+
+# In[12]:
+
+
+# plt.figure(figsize=(10,10))
+# i = 0
+# for (image, label) in train_dataset.take(25):
+#     image = image.numpy().reshape((32,32))
+#     plt.subplot(5,5,i+1)
+#     plt.xticks([])
+#     plt.yticks([])
+#     plt.grid(False)
+#     plt.imshow(image, cmap=plt.cm.binary)
+# #     plt.xlabel(class_names[label])
+#     i += 1
+# plt.show()
+
+
+# In[13]:
+
+
+inputs=keras.Input(shape=(32,32,3))
+x=layers.Conv2D(16,(3,3),activation='relu')(inputs)
+x=layers.Dropout(0.3)(x)
+x=layers.Conv2D(32,(3,3),activation='relu')(x)
+x=layers.MaxPool2D()(x)
+x=layers.Conv2D(64,(3,3),activation='relu')(x)
+x=layers.Dropout(0.3)(x)
+x=layers.Conv2D(128,(3,3),activation='relu')(x)
+x=layers.MaxPool2D()(x)
+x=layers.Conv2D(256,(3,3),activation='relu')(x)
+x=layers.Dropout(0.3)(x)
+x=layers.Conv2D(512,(3,3),activation='relu')(x)
+x=layers.Flatten()(x)
+x=layers.Dense(256,activation='relu')(x)
+x=layers.Dropout(0.3)(x)
+x=layers.Dense(512,activation='relu')(x)
+x=layers.Dropout(0.3)(x)
+outputs=layers.Dense(10,activation='softmax')(x)
+#建立網路模型
+model_2=keras.Model(inputs,outputs,name='model-2')
+model_2.summary() #顯示網路架構
+
+
+# In[14]:
+
+
+model_dir='lab4-logs/models/'
+os.makedirs(model_dir)
+
+
+# In[15]:
+
+
+#將訓練紀錄存成tensorBoard記錄檔
+log_dir=os.path.join('lab4-logs','model-2')
+model_cbk=keras.callbacks.TensorBoard(log_dir=log_dir)
+#儲存最好的網路模型權重
+model_mckp=keras.callbacks.ModelCheckpoint(model_dir+'/Best-model-2.h5',
+                                           monitor='val_categorical_accuracy',
+                                           save_best_only=True,
+                                           mode='max')
+
+
+# In[16]:
+
+
+model_2.compile(keras.optimizers.Adam(),
+                loss=keras.losses.CategoricalCrossentropy(),
+                metrics=[keras.metrics.CategoricalAccuracy()])
+
+
+# In[17]:
+
+
+num_train_examples = info.splits['train'].num_examples
+num_test_examples = info.splits['test'].num_examples
+print("訓練樣本個數: {}".format(num_train_examples))
+print("測試樣本個數: {}".format(num_test_examples))
+
+
+# In[18]:
+
+
+train_data = train_data.repeat().shuffle(num_train_examples).batch(batch_size)
+test_data = test_data.batch(batch_size)
+
+
+# In[19]:
+
+
+history_2=model_2.fit(train_data,
+                      epochs=15,
+                      steps_per_epoch=math.ceil(num_train_examples/batch_size),
+                      callbacks=[model_cbk,model_mckp])
+
+
+# In[20]:
+
+
+def show_train_history(history_2,train,loss):
+    plt.plot(history_2.history[train])
+    plt.plot(history_2.history[loss])
+    plt.title('Train History')
+    plt.ylabel(train)
+    plt.xlabel('Epoch')
+    plt.legend(['train','loss'], loc='upper left')
+    plt.show()
+
+
+# In[21]:
+
+
+show_train_history(history_2,'categorical_accuracy','loss')
+
+
+# In[22]:
+
+
+print(num_train_examples)
+print(train_data)
+
+
+# In[23]:
+
+
+print(num_test_examples)
+print(test_data)
+
+
+# In[24]:
+
+
+valid_data = valid_data.batch(batch_size)
+print(valid_data)
+
+
+# In[25]:
+
+
+loss,acc=model_2.evaluate(test_data)
+
+
+# In[26]:
+
+
+print('Accuracy on test dataset:', acc)
+
+
+
