@@ -1,0 +1,228 @@
+import time
+import pymysql
+import random
+import string
+import threading
+from datetime import datetime
+import decimal
+# 連線後端料庫
+conn = pymysql.connect(host='192.168.32.20', port=7001, user='root', password='Aa1234',
+                       database='testpython', charset='utf8')
+cur = conn.cursor()
+# 如果存在表把它刪除
+cur.execute("drop table if exists test")
+# 建置表的欄位跟資料型態
+sql = '''create table test(
+        sn               int(10), 
+        timestamp        datetime(6), 
+        digits           int(10),
+        number           int(10),
+        randomnumber     int(20),
+        randomnchar      nchar(20), 
+        randomnvarchar   nvarchar(200), 
+        randomchar       char(20), 
+        randomvarchar    varchar(100), 
+        maxrandomvarchar varchar(200),
+        buy              float(20), 
+        sell             float(20),
+        deal             float(20),
+        lowest           float(20),
+        highest          float(20),
+        rise             float(20),
+        fall             float(20),
+        day              datetime(3),  
+        PRIMARY KEY(sn,timestamp))'''
+cur.execute(sql)
+# 設定變數(要測試多少筆資料)
+total = 10000
+member = 1250
+# semember = 1250
+# thmember = 1875
+# fimember = 2500
+# 建立一個陣列存放迴圈裡面的值
+own = []
+random.seed(10)
+for i in range(total):
+    now = datetime.now()
+    # 序列
+    sn = int(i+1)
+    # 時間(年-月-日 時分秒毫秒)
+    timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+    # 亂數數字
+    digits = int(random.randint(1, 9))
+    # 亂數數字
+    number = int(random.randint(10, 100000))
+    # 亂數數字
+    randomnumber = int(random.randint(10, 100000))
+    # 亂數中文字
+    randomnchar = bytes.fromhex(f'{random.randint(0xb0, 0xf7):x}{random.randint(0xa1, 0xfe):x}').decode('gb18030')
+    # 亂數中文字
+    randomnvarchar = bytes.fromhex(f'{random.randint(0xb0, 0xf7):x}{random.randint(0xa1, 0xfe):x}').decode('gb18030')+bytes.fromhex(f'{random.randint(0xb0, 0xf7):x}{random.randint(0xa1, 0xfe):x}').decode('gb18030')
+    # 亂數英文字
+    randomchar = ''.join(random.sample(string.ascii_letters + string.digits, 4))
+    # 亂數英文字
+    randomvarchar = ''.join(random.sample(string.ascii_letters + string.digits, random.randint(4, 10)))
+    # 亂數英文字
+    maxrandomvarchar = ''.join(random.sample(string.ascii_letters + string.digits, random.randint(2, 15)))
+    # 小數
+    buy = float(random.randrange(100, 1000000))/100
+    # 小數
+    sell = float(random.randrange(100, 1000000))/1000
+    # 小數
+    deal = float(random.randrange(1000, 1000000))/10000
+    # 小數
+    lowest = float(random.randrange(10, 1000))/100
+    # 小數
+    highest = float(random.randrange(10, 1000000))/1000
+    # 小數
+    rise = float(random.randrange(1, 100))/100
+    # 小數
+    fall = float(random.randrange(1, 100))/100
+    # 時間(年-月-日)
+    day = now.strftime('%Y-%m-%d')
+    own.append((sn,timestamp,digits,number,randomnumber,randomnchar,randomnvarchar,randomchar,randomvarchar,maxrandomvarchar,
+                buy,sell,deal,lowest,highest,rise,fall,day))        
+
+try:
+    cur.executemany('''INSERT INTO test (sn,timestamp,digits,number,randomnumber,randomnchar,randomnvarchar,
+                randomchar,randomvarchar,maxrandomvarchar,buy,sell,deal,lowest,highest,rise,fall,day) VALUES 
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',own) 
+    conn.commit()
+except Exception as e:
+    print('initial is error', e)
+# 建立一個函式給只輸入一次資料庫使用
+def test():
+    one = []    
+    totalsn=total
+    for i in range(1):
+        now = datetime.now()
+        j = (random.randint(1, 1000000))
+        # 序列
+        sn = int(totalsn+j)
+        # 時間(年-月-日 時分秒毫秒)
+        timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+        # 亂數數字
+        digits = int(random.randint(1, 9))
+        # 亂數數字
+        number = int(random.randint(10, 100000))
+        # 亂數數字
+        randomnumber = int(random.randint(10, 100000))
+        # 亂數中文字
+        randomnchar = bytes.fromhex(f'{random.randint(0xb0, 0xf7):x}{random.randint(0xa1, 0xfe):x}').decode('gb18030')
+        # 亂數中文字
+        randomnvarchar = bytes.fromhex(f'{random.randint(0xb0, 0xf7):x}{random.randint(0xa1, 0xfe):x}').decode('gb18030')+bytes.fromhex(f'{random.randint(0xb0, 0xf7):x}{random.randint(0xa1, 0xfe):x}').decode('gb18030')
+        # 亂數英文字
+        randomchar = ''.join(random.sample(string.ascii_letters + string.digits, 4))
+        # 亂數英文字
+        randomvarchar = ''.join(random.sample(string.ascii_letters + string.digits, random.randint(4, 10)))
+        # 亂數英文字
+        maxrandomvarchar = ''.join(random.sample(string.ascii_letters + string.digits, random.randint(2, 15)))
+        # 小數
+        buy = float(random.randrange(100, 1000000))/100
+        # 小數
+        sell = float(random.randrange(100, 1000000))/1000
+        # 小數
+        deal = float(random.randrange(1000, 1000000))/10000
+        # 小數
+        lowest = float(random.randrange(10, 1000))/100
+        # 小數
+        highest = float(random.randrange(10, 1000000))/1000
+        # 小數
+        rise = float(random.randrange(1, 100))/100
+        # 小數
+        fall = float(random.randrange(1, 100))/100
+        # 時間(年-月-日)
+        day = now.strftime('%Y-%m-%d')
+        one.append((sn,timestamp,digits,number,randomnumber,randomnchar,randomnvarchar,randomchar,randomvarchar,maxrandomvarchar,
+                    buy,sell,deal,lowest,highest,rise,fall,day)) 
+    return one
+
+def select():
+    for i in range(member):
+        randnum=[]
+        seq = list(range(1,member+1))
+        numb = random.sample(seq,member)
+        try:
+            randnum=numb[i]
+            cur.execute('''SELECT * FROM test WHERE sn = %s''',randnum)  
+            conn.commit()  
+        except Exception as e:
+            print('select is error', e)
+
+def update():
+    for i in range(member):
+        # 使用亂數決定要(搜尋、輸入、更新、刪除)
+        randnum=[]
+        seq = list(range(1,member+1))
+        numb = random.sample(seq,member)
+        try:
+            randnum=numb[i]
+            number = int(random.randint(10, 1000000))           
+            now = datetime.now()
+            timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+            cur.execute('''UPDATE test SET number = %s, timestamp = %s WHERE sn = %s''',(number,timestamp,randnum))
+            conn.commit()
+        except Exception as e:
+            print('update is error', e)
+
+def delete():
+    randnum=[]
+    seq = list(range(1,member+1))
+    numb = random.sample(seq,member)
+    for i in range(member):
+        # 使用亂數決定要(搜尋、輸入、更新、刪除)
+        try:
+            randnum=numb[i]
+            cur.execute('''DELETE FROM test WHERE sn = %s''',randnum)
+            conn.commit()
+        except Exception as e:
+            print('delete is error', e)  
+
+def insert():
+    for i in range(member):
+        try:
+            one=test()
+            cur.executemany('''INSERT INTO test (sn,timestamp,digits,number,randomnumber,randomnchar,randomnvarchar,
+                randomchar,randomvarchar,maxrandomvarchar,buy,sell,deal,lowest,highest,rise,fall,day) VALUES 
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',one)
+            conn.commit()  
+        except Exception as e:
+            print('insert is error', e)
+
+def startime():
+    cur.execute('''SELECT min(timestamp) FROM test''')
+    time_list = cur.fetchone() 
+    conn.commit()
+    print(time_list)
+
+def endtime():
+    cur.execute('''SELECT max(timestamp) FROM test''')
+    time_list = cur.fetchone() 
+    conn.commit()
+    print(time_list)
+    
+def count():
+    cur.execute('''SELECT count(*) FROM test ''')
+    time_list = cur.fetchone() 
+    conn.commit()
+    print(time_list)    
+
+def server():
+    cur.execute('''select @@server_id''')
+    server_id = cur.fetchone() 
+    conn.commit()
+    print(server_id)   
+try:
+    startime()
+    select()
+    update()
+    delete()
+    insert() 
+    endtime()
+    server()
+#     count()
+except Exception as e:
+    print('server_count is error', e)
+finally:
+    cur.close()
+    conn.close() 
