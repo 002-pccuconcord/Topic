@@ -1,0 +1,153 @@
+檔案名稱:	pingip.sh
+
+檔案權限:	-rwxr-xr-x. 1 root root  9767 Sep 11 20:37 pingip.sh
+
+檔案位置:	/usr/local/bin
+
+檔案內容:
+
+=================================
+#!/bin/sh
+# Program
+#       Use ping command to check the network's PC state.
+network="192.168.64"              # 先定義一個網域的前面部分！
+port="3306"
+while :
+do
+a=$(cat /usr/local/bin/look.txt | grep a)
+b=$(cat /usr/local/bin/look.txt | grep b)
+c=$(cat /usr/local/bin/look.txt | grep c)
+d=$(cat /usr/local/bin/look.txt | grep d)
+e=$(cat /usr/local/bin/look.txt | grep e)
+f=$(cat /usr/local/bin/look.txt | grep f)
+for sitenu in 41 42 45       # seq 為 sequence(連續) 的縮寫之意
+do
+        # 底下的程式在取得 ping 的回傳值是正確的還是失敗的！
+        ping -c 1 -w 1 ${network}.${sitenu} &> /dev/null && result=0 || result=1
+        # 開始顯示結果是正確的啟動 (UP) 還是錯誤的沒有連通 (DOWN)
+        if [ "${result}" == 1 ]; then
+                case ${sitenu} in
+                        "41")
+                                if [ "$a" == "a=1" ]; then
+                                echo "Server network ${network}.${sitenu} is DOWN."
+                                sed -i 's/Server1/192.168.64.41/' /usr/local/bin/correspond.txt
+                                sed -i 's/a=1/a=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                        "42")
+                                if [ "$b" == "b=1" ]; then
+                                echo "Server network ${network}.${sitenu} is DOWN."
+                                sed -i 's/Server2/192.168.64.42/' /usr/local/bin/correspond.txt
+                                sed -i 's/b=1/b=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                        "45")
+                                if [ "$c" == "c=1" ]; then
+                                echo "Server network ${network}.${sitenu} is DOWN."
+                                sed -i 's/Server5/192.168.64.45/' /usr/local/bin/correspond.txt
+                                sed -i 's/c=1/c=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                esac
+        fi
+        #底下的程式在取得nc (netcat)通訊埠掃描(port scan)的回傳值是正確的還是失敗的！
+        nc -vz ${network}.${sitenu} ${port} &> /dev/null && result1=0 || result1=1
+        if [ "${result1}" == 1 ]; then
+		case ${sitenu} in
+                        "41")
+                                if [ "$a" == "a=1" ]; then
+                                echo "Server port    ${network}.${sitenu} is DOWN."
+                                sed -i 's/Server1/192.168.64.41/' /usr/local/bin/correspond.txt
+                                sed -i 's/a=1/a=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                        "42")
+                                if [ "$b" == "b=1" ]; then
+                                echo "Server port    ${network}.${sitenu} is DOWN."
+                                sed -i 's/Server2/192.168.64.42/' /usr/local/bin/correspond.txt
+                                sed -i 's/b=1/b=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                        "45")
+                                if [ "$c" == "c=1" ]; then
+                                echo "Server port    ${network}.${sitenu} is DOWN."
+                                sed -i 's/Server5/192.168.64.45/' /usr/local/bin/correspond.txt
+                                sed -i 's/c=1/c=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                esac
+        fi
+        #底下的程式在取得ssh到MariaDB query的回傳值是正確的還是失敗的！
+        sshpass -pAa1234 ssh root@${network}.${sitenu} "bash /root/testmariadb.sh" &> /usr/local/bin/check.txt
+        check=$(cat /usr/local/bin/check.txt | grep ${network}.${sitenu})
+        if [ "$check" == "${network}.${sitenu}" ]; then
+                case ${sitenu} in
+                        "41")
+                                if [ "$a" == "a=1" ]; then
+                                echo "Server MariaDB ${network}.${sitenu} is Down."
+                                sed -i 's/Server1/192.168.64.41/' /usr/local/bin/correspond.txt
+                                sed -i 's/a=1/a=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                        "42")
+                                if [ "$b" == "b=1" ]; then
+                                echo "Server MariaDB ${network}.${sitenu} is Down."
+                                sed -i 's/Server2/192.168.64.42/' /usr/local/bin/correspond.txt
+                                sed -i 's/b=1/b=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                        "45")
+                                if [ "$c" == "c=1" ]; then
+				echo "Server MariaDB ${network}.${sitenu} is Down."
+                                sed -i 's/Server5/192.168.64.45/' /usr/local/bin/correspond.txt
+                                sed -i 's/c=1/c=0/' /usr/local/bin/look.txt
+                                fi
+                        ;;
+                esac
+        fi
+        case ${sitenu} in
+                        "41")
+                        if [ "$d" == "d=1" ]; then
+                                if [ "$(cat /usr/local/bin/comparison.txt | grep 192.168.64.41)" == "${network}.${sitenu}" ] && [ "$(cat /usr/local/bin/correspond.txt | grep 192.168.64.41)" == "${network}.${sitenu}" ]; then
+                                        sshpass -pAa1234 ssh root@192.168.64.70 "systemctl start garbd.service"
+                                        date +"%Y-%m-%d %H:%M:%S.%9N"
+                                        curl -X POST "https://api.telegram.org/bot1284989689:AAFBnWmFfjXt1VZ4OvHngDO54ONy_XDrKI4/sendMessage" -d "chat_id=1189624894&text=Have problem"
+                                        sed -i 's/d=1/d=0/' /usr/local/bin/look.txt
+                                fi
+                                if [ "$(cat /usr/local/bin/comparison.txt | grep 192.168.64.41)" != "${network}.${sitenu}" ] && [ "$(cat /usr/local/bin/correspond.txt | grep 192.168.64.41)" == "${network}.${sitenu}" ]; then
+                                                echo "Server MariaDB ${network}.${sitenu} is Down."
+                                                sshpass -pAa1234 ssh root@192.168.64.70 "systemctl start garbd.service"
+                                                date +"%Y-%m-%d %H:%M:%S.%9N"
+                                                curl -X POST "https://api.telegram.org/bot1284989689:AAFBnWmFfjXt1VZ4OvHngDO54ONy_XDrKI4/sendMessage" -d "chat_id=1189624894&text=Have problem"
+                                                sed -i 's/d=1/d=0/' /usr/local/bin/look.txt
+                                fi
+                        fi
+                        ;;
+                        "42")
+                        if [ "$e" == "e=1" ]; then
+                                if [ "$(cat /usr/local/bin/comparison.txt | grep 192.168.64.42)" == "${network}.${sitenu}" ] && [ "$(cat /usr/local/bin/correspond.txt | grep 192.168.64.42)" == "${network}.${sitenu}" ]; then
+                                        sshpass -pAa1234 ssh root@192.168.64.70 "systemctl start garbd.service"
+                                        date +"%Y-%m-%d %H:%M:%S.%9N"
+                                        curl -X POST "https://api.telegram.org/bot1284989689:AAFBnWmFfjXt1VZ4OvHngDO54ONy_XDrKI4/sendMessage" -d "chat_id=1189624894&text=Have problem"
+                                        sed -i 's/e=1/e=0/' /usr/local/bin/look.txt
+                                fi
+                                if [ "$(cat /usr/local/bin/comparison.txt | grep 192.168.64.42)" != "${network}.${sitenu}" ] && [ "$(cat /usr/local/bin/correspond.txt | grep 192.168.64.42)" == "${network}.${sitenu}" ]; then
+				sshpass -pAa1234 ssh root@192.168.64.70 "systemctl start garbd.service"
+                                        date +"%Y-%m-%d %H:%M:%S.%9N"
+                                        curl -X POST "https://api.telegram.org/bot1284989689:AAFBnWmFfjXt1VZ4OvHngDO54ONy_XDrKI4/sendMessage" -d "chat_id=1189624894&text=Have problem"
+                                        sed -i 's/f=1/f=0/' /usr/local/bin/look.txt
+                                fi
+                                if [ "$(cat /usr/local/bin/comparison.txt | grep 192.168.64.45)" != "${network}.${sitenu}" ] && [ "$(cat /usr/local/bin/correspond.txt | grep 192.168.64.45)" == "${network}.${sitenu}" ]; then
+                                                echo "Server MariaDB ${network}.${sitenu} is Down."
+                                                sshpass -pAa1234 ssh root@192.168.64.70 "systemctl start garbd.service"
+                                                date +"%Y-%m-%d %H:%M:%S.%9N"
+                                                curl -X POST "https://api.telegram.org/bot1284989689:AAFBnWmFfjXt1VZ4OvHngDO54ONy_XDrKI4/sendMessage" -d "chat_id=1189624894&text=Have problem"
+                                                sed -i 's/f=1/f=0/' /usr/local/bin/look.txt
+                                fi
+                        fi
+                        ;;
+                esac
+        done
+        sleep 1
+done
+=================================
