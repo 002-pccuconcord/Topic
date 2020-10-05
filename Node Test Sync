@@ -1,0 +1,18 @@
+#!/bin/bash
+python3 /root/sync/1-sync.py
+sshpass -pAa1234 ssh -o StrictHostKeyChecking=no -t root@192.168.64.42 "bash /root/reboot.sh"
+sleep 5
+access="0% packet loss,"
+error="100% packet loss,"
+while :
+do
+p=`ping -c 1 192.168.64.42 | awk '{print $6,$7,$8}' | grep %`
+if [ "$p" == "$access" ];then
+        echo "server ok"
+	sshpass -pAa1234 ssh -o StrictHostKeyChecking=no -t root@192.168.64.42 "bash /root/testmariadb.sh"
+	sshpass -pAa1234 ssh -o StrictHostKeyChecking=no -t root@192.168.64.42 "bash /root/reconnsync.sh"
+	sshpass -pAa1234 ssh -o StrictHostKeyChecking=no -t root@192.168.64.42 "cat /root/reconn.txt"
+	sshpass -pAa1234 ssh -o StrictHostKeyChecking=no -t root@192.168.64.45 "bash /root/stopgarbd.sh"
+	break
+fi
+done
