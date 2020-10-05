@@ -1,0 +1,263 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import csv
+import sys
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import datetime
+import pandas as pd
+
+
+# In[2]:
+
+
+def GetData(a,sid):
+    HData = open(r"C:\Users\admin\AI-GPU\data\2330_103\'" + a + '.csv',encoding='big5').readlines()
+    MData = [line.strip('\n').split(',') for line in HData]
+    MData_1 = [line for line in MData if line[0][:5] == sid]
+    return MData_1
+
+
+# In[3]:
+
+
+Data = GetData('2330_103_1','10301')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_1')
+plt.show()
+
+
+# In[4]:
+
+
+Data = GetData('2330_103_2','10302')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_2')
+plt.show()
+
+
+# In[5]:
+
+
+Data = GetData('2330_103_3','10303')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_3')
+plt.show()
+
+
+# In[6]:
+
+
+Data = GetData('2330_103_4','10304')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_4')
+plt.show()
+
+
+# In[7]:
+
+
+Data = GetData('2330_103_5','10305')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_5')
+plt.show()
+
+
+# In[8]:
+
+
+Data = GetData('2330_103_6','10306')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_6')
+plt.show()
+
+
+# In[9]:
+
+
+Data = GetData('2330_103_7','10307')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_7')
+plt.show()
+
+
+# In[10]:
+
+
+Data = GetData('2330_103_8','10308')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_8')
+plt.show()
+
+
+# In[11]:
+
+
+Data = GetData('2330_103_9','10309')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_9')
+plt.show()
+
+
+# In[12]:
+
+
+Data = GetData('2330_103_10','10310')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_10')
+plt.show()
+
+
+# In[13]:
+
+
+Data = GetData('2330_103_11','10311')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_11')
+plt.show()
+
+
+# In[14]:
+
+
+Data = GetData('2330_103_12','10312')
+Time = [str(line[1]) for line in Data]
+Priceh = [float(line[3]) for line in Data]
+Pricel = [float(line[4]) for line in Data]
+plt.figure(figsize = (10, 7), dpi = 100)
+plt.xlabel('Time', fontsize = 16)
+plt.ylabel('Price', fontsize = 16)
+plt.xticks(fontsize = 12)                           
+plt.yticks(fontsize = 12)
+plt.plot(Time,Priceh,'o-')
+plt.plot(Time,Pricel,'o-')
+plt.legend(['High_Price', 'Low_Price'], loc='upper left')
+plt.xticks(rotation=45)
+plt.title('2330_103_12')
+plt.show()
+
