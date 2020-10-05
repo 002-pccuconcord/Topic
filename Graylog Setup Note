@@ -1,0 +1,72 @@
+1.在主機上，做好升級與事前相關必要軟體安裝
+	# yum updade
+	# yum install epel-release
+	# yum install java-1.8.0-openjdk-headless.x86_64
+	# yum install pwgen
+
+2.安裝 MongoDB
+	# vi mongodb-org-4.0.repo
+
+	[mongodb-org-4.0]
+	name=MongoDB Repository
+	baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.0/x86_64/
+	gpgcheck=1
+	enabled=1
+	gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
+
+	# yum install -y mongodb-org
+	# systemctl daemon-reload
+	# systemctl enable mongod.service
+	# systemctl start mongod.service
+	# systemctl status mongod.service 
+
+3.安裝 ElasticSearchDB
+	# rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+	# vi /etc/yum.repos.d/elasticsearch.repo
+
+	[elasticsearch-6.x]
+	name=Elasticsearch repository for 6.x packages
+	baseurl=https://artifacts.elastic.co/packages/6.x/yum
+	gpgcheck=1
+	gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+	enabled=1
+	autorefresh=1
+	type=rpm-md
+
+	# yum install elasticsearch
+	# vi /etc/elasticsearch/elasticsearch.yml
+	進入設定檔改名稱
+	#cluster.name: my-application---->cluster.name: graylog
+node.name: node-1(隨意取名)
+network.host: 192.168.32.61
+http.port: 9200
+
+
+	# systemctl enable elasticsearch.service
+	# systemctl restart elasticsearch.service
+	# systemctl status elasticsearch.service 
+
+4.下載安裝 Graylog
+	rpm -Uvh https://packages.graylog2.org/repo/packages/graylog-3.0-repository_latest.rpm
+	yum install graylog-server
+	pwgen -N 1 -s 96 (產生密碼給 password_secret 使用)
+	echo -n "輸入密碼" | shasum -a 256 (產生密碼給 root_password_sha2 使用)
+	
+	vi /etc/graylog/server/server.conf
+	password_secret = （pwgen 產生的密碼）
+	root_username = admin
+	root_password_sha2 = (shawum 產生的密碼)
+	root_timezone = Asia/Taipei
+	http_bind_address = 192.168.32.61:9000
+elasticsearch_hosts = http://192.168.32.61:9200
+
+
+
+		
+	# systemctl enable graylog-server.service
+	# systemctl start graylog-server.service
+	
+	使用 firefox ，連線 http://192.168.64.61:9000 即可登入！
+在需要監控的主機
+vi /etc/rsyslog.conf
+打以下指令(須注意空白)
