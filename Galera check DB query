@@ -1,0 +1,17 @@
+檔案名稱:	testmariadb.sh
+
+檔案權限:	-rwxr-xr-x. 1 root root   178 Sep  6 11:00 testmariadb.sh
+
+檔案位置:	/root
+
+檔案內容:
+
+=================================
+#!/bin/bash
+s="Synced"
+t=`mysql -uroot -pAa1234 -e"show status like 'wsrep_local_state_comment'"`
+r=`echo $t | awk '{print $4}'`
+if [ "$r" != "$s" ];then
+echo "192.168.64.41"
+fi
+=================================
