@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import csv
+import mysql.connector
+import time
+import pandas as pd
+import numpy as np
+import datetime
+import threading
+import requests
+import random
+from bs4 import BeautifulSoup
+
+
+# In[2]:
+
+
+def get_into():
+    url = "https://tw.stock.yahoo.com/q/ts?s=2330&t=50"
+    df = pd.read_html(url,encoding='big5')
+    df[3]=df[3].drop([0])
+    df[3]
+    date = time.strftime("%Y-%m-%d", time.localtime())
+    with open("'"+date+'.csv','w',encoding='utf-8',newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        for i in range(1,50,1):
+            val0 = df[3][0][i]
+            val1 = df[3][1][i]
+            val2 = df[3][2][i]
+            val3 = df[3][3][i]
+            val4 = df[3][4][i]
+            val5 = df[3][5][i]
+            table=[
+                [date,val0,val1,val2,val3,val4,val5]
+            ]
+            writer.writerows(table)
+    db = mysql.connector.connect(
+        host='127.0.0.1',
+        user='root',
+        passwd='12345678',
+        db='new')
+
+    cursor = db.cursor()
+    with open("'"+date+'.csv','r',encoding='utf-8') as csvfile:
+        csv_data=csv.reader(csvfile, delimiter=',')
+
+        for row in csv_data:
+            print(row)
+            cursor.execute('INSERT INTO news(date, time,                   buyin, sellout, price, updown, num)'                   'VALUES("%s", "%s", "%s", "%s", "%s", "%s", "%s")', 
+                  row)
+            db.commit()
+        cursor.close()
+
+
+# In[3]:
+
+
+headers = {
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36'
+}
+
+
+# In[4]:
+
+
+def get_time():
+    start_time = datetime.datetime.now()
+    tmp = 0
+    sec_cnt = 0
+    while 1:
+        current_time = datetime.datetime.now()
+        if sec_cnt == 19800:
+            break
+        if current_time.second >= start_time.second:
+            if tmp != current_time.second - start_time.second:
+                #print("<no 60> + ", tmp)
+                sec_cnt += 1
+                print("Time_cnt: ", sec_cnt)
+                if sec_cnt % 246 == 0:
+                    get_into()
+            tmp = current_time.second - start_time.second
+        # when get 60
+        else:
+            if tmp != current_time.second + 60 - start_time.second:
+                sec_cnt += 1
+                print("Time_cnt: ", sec_cnt)
+                if sec_cnt % 246 == 0:
+                    get_into()
+            tmp = current_time.second + 60 -start_time.second
+
+
+# In[5]:
+
+
+def evdy():
+    get_time()
+    #如果需要循环调用，就要添加以下方法
+    timer = threading.Timer(86400, evdy)
+    timer.start()
+
+# 获取现在时间
+now_time = datetime.datetime.now()
+# 获取明天时间
+next_time = now_time + datetime.timedelta(days=+1)
+next_year = next_time.date().year
+next_month = next_time.date().month
+next_day = next_time.date().day
+# 获取明天3点时间
+next_time = datetime.datetime.strptime(str(next_year)+"-"+str(next_month)+"-"+str(next_day)+" 09:00:00", "%Y-%m-%d %H:%M:%S")
+# # 获取昨天时间
+# last_time = now_time + datetime.timedelta(days=-1)
+
+# 获取距离明天3点时间，单位为秒
+timer_start_time = (next_time - now_time).total_seconds()
+print(timer_start_time)
+# 54186.75975
+
+
+#定时器,参数为(多少时间后执行，单位为秒，执行的方法)
+timer = threading.Timer(timer_start_time, evdy)
+timer.start()
+
